@@ -74,20 +74,20 @@ support_linux = {
         'https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-{arch}/{version}/slim/rootfs.tar.xz',
         'zip': 'Jx',
         'update': 'apt update && apt upgrade -y',
-        'latest': 'stable',
+        'latest': 'buster',
         'aarch64': {
             'arch': 'arm64v8',
-            'versions': ['stretch', 'buster', 'stable'],
+            'versions': ['stretch', 'buster'],
         },
         'arm': {
             'arch': 'arm32v7',
-            'versions': ['jessie', 'stretch', 'buster', 'stable'],
+            'versions': ['jessie', 'stretch', 'buster'],
         },
         'amd64': {
-            'versions': ['jessie', 'stretch', 'buster', 'stable'],
+            'versions': ['jessie', 'stretch', 'buster'],
         },
         'i386': {
-            'versions': ['jessie', 'stretch', 'buster', 'stable'],
+            'versions': ['jessie', 'stretch', 'buster'],
         },
     },
     'fedora': {
