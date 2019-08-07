@@ -8,24 +8,25 @@ from plumbum.cmd import chmod, echo, rm
 support_linux = {
     'alpine': {
         'url':
-        'http://dl-cdn.alpinelinux.org/alpine/v{version}/releases/{arch}/alpine-minirootfs-{version}.0-aarch64.tar.gz',
+        'http://dl-cdn.alpinelinux.org/alpine/v{version}/releases/{arch}/alpine-minirootfs-{version}.0-{arch}.tar.gz',
         'zip': 'zx',
         'update': 'apk update && apk upgrade',
-        'latest': 'latest-stable',
+        'latest': '3.9',
+        'sh': '/bin/sh',
         'aarch64': {
-            'versions': ['3.9', 'latest-stable'],
+            'versions': ['3.9'],
         },
         'arm': {
             'arch': 'armhf',
-            'versions': ['3.9', 'latest-stable'],
+            'versions': ['3.9'],
         },
         'amd64': {
             'arch': 'x86_64',
-            'versions': ['2.7', '3.9', 'latest-stable'],
+            'versions': ['2.7', '3.9'],
         },
         'i386': {
             'arch': 'x86',
-            'versions': ['2.7', '3.9', 'latest-stable'],
+            'versions': ['2.7', '3.9'],
         },
     },
     'arch': {
@@ -72,7 +73,7 @@ support_linux = {
         'url':
         'https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-{arch}/{version}/slim/rootfs.tar.xz',
         'zip': 'Jx',
-        'update': 'apt update && apt upgrade',
+        'update': 'apt update && apt upgrade -y',
         'latest': 'stable',
         'aarch64': {
             'arch': 'arm64v8',
@@ -114,7 +115,7 @@ support_linux = {
         'url':
         'https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Rootfs/Kali/{arch}/kali-rootfs-{arch}.tar.gz',
         'zip': 'zx',
-        'update': 'apt update && apt upgrade',
+        'update': 'apt update && apt upgrade -y',
         'latest': '',
         'aarch64': {
             'arch': 'arm64',
@@ -145,7 +146,7 @@ support_linux = {
         'url':
         'https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Rootfs/Parrot/{arch}/parrot-rootfs-{arch}.tar.gz',
         'zip': 'zx',
-        'update': 'apt update && apt upgrade',
+        'update': 'apt update && apt upgrade -y',
         'latest': '',
         'aarch64': {
             'arch': 'arm64',
@@ -166,7 +167,7 @@ support_linux = {
         'url':
         'https://partner-images.canonical.com/core/{version}/current/ubuntu-{version}-core-cloudimg-{arch}-root.tar.gz',
         'zip': 'zx',
-        'update': 'apt update && apt upgrade',
+        'update': 'apt update && apt upgrade -y',
         'latest': 'bionic',
         'aarch64': {
             'arch': 'arm64',
@@ -191,7 +192,7 @@ nameserver 8.8.8.8
 nameserver 8.8.4.4
 '''
 
-start_script = '''#!/data/data/com.termux/files/usr/bin/bash
+start_script = '''#!{shell}
 cd $HOME/.atilo/
 unset LD_PRELOAD
 command="proot"
@@ -208,7 +209,7 @@ command+=" HOME=/root"
 command+=" LANG=C.UTF-8"
 command+=" PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 command+=" TERM=xterm-256color"
-command+=" /bin/{sh} --login"
+command+=" {sh} --login"
 export PROOT_NO_SECCOMP=1
 com="$@"
 if [ -z "$1" ];then
@@ -221,6 +222,27 @@ atilo_home = '{home}/.atilo'.format(home=local.env['HOME'])
 atilo_tmp = '{atilo_home}/tmp'.format(atilo_home=atilo_home)
 prefix = local.env.get('PREFIX', '')
 start_script_file = prefix + '/bin/start{release_name}'
+SHELL = local.env.get('SHELL', '/bin/bash')
+
+
+def check_arch() -> str:
+    arch = platform.machine()
+
+    if arch == 'aarch64':
+        time_arch = 'arm64'
+    elif 'arm' in arch:
+        time_arch = 'armhf'
+    elif arch == 'i686':
+        time_arch = 'i386'
+    elif arch == 'x86_64':
+        time_arch = 'amd64'
+    else:
+        fatal('[ Unsupported architecture {}'.format(arch))
+
+    return time_arch
+
+
+ARCH = check_arch()
 
 
 def tip(s: str) -> None:
@@ -255,23 +277,6 @@ def check_req() -> None:
     pkg['install', installs]()
 
 
-def check_arch() -> str:
-    arch = platform.machine()
-
-    if arch == 'aarch64':
-        time_arch = 'arm64'
-    elif 'arm' in arch:
-        time_arch = 'armhf'
-    elif arch == 'i686':
-        time_arch = 'i386'
-    elif arch == 'x86_64':
-        time_arch = 'amd64'
-    else:
-        fatal('[ Unsupported architecture {}'.format(arch))
-
-    return time_arch
-
-
 def format_url(dist: str, arch: str, version: str) -> str:
     if dist not in support_linux:
         fatal('Disttribution {dist} is not supported'.format(dist))
@@ -291,15 +296,16 @@ def format_url(dist: str, arch: str, version: str) -> str:
                     latest=distinfo['latest']))
         version = distinfo['latest']
 
+    arch = distinfo[arch].get('arch', arch)
     return distinfo, distinfo['url'].format(arch=arch,
                                             version=version), version
 
 
-def create_start_script(release_name) -> str:
+def create_start_script(release_name, sh='bash') -> str:
     execname = 'start' + release_name
 
     filename = start_script_file.format(release_name=release_name)
-    script = start_script.format(release_name=release_name, sh='bash')
+    script = start_script.format(release_name=release_name, sh=sh, shell=SHELL)
     (echo[script] > filename)()
     chmod['+x', filename]()
 
@@ -340,7 +346,7 @@ def install_linux(dist: str, arch: str, version: str = ''):
     profile = os.path.join(root, 'etc/profile')
     (echo['export USER=root'] >> profile)()
 
-    script = create_start_script(release_name)
+    script = create_start_script(release_name, distinfo.get('sh', '/bin/bash'))
 
     tip('[ Updating ... ]')
     bash[script, distinfo['update']] & FG
@@ -353,17 +359,29 @@ def cmd_install(dist, version):
     # Create dirs
     os.makedirs(atilo_tmp, exist_ok=True)
 
-    arch = check_arch()
     check_req()
 
-    install_linux(dist, arch, version)
+    install_linux(dist, ARCH, version)
+
+
+def cmd_list():
+    tip('%-20s%-30s' % ('name', 'version'))
+    for dist, info in support_linux.items():
+        if ARCH in info:
+            tip('%-12s%-30s' % (dist, ' '.join(info[ARCH]['versions'])))
+
+
+def cmd_list_installed():
+    for d in os.listdir(atilo_home):
+        if d != 'tmp':
+            tip(d)
 
 
 def cmd_remove(name):
     os.chdir(atilo_home)
     if os.path.isdir(name):
         shutil.rmtree(name)
-        os.remove(start_script_file.format(release_name=name))
+        shutil.rmtree(start_script_file.format(release_name=name), ignore_errors=True)
         tip('[ Successfully delete {release_name} ]'.format(release_name=name))
     else:
         fatal("[ Unable to locate {release_name} ]".format(release_name=name))
@@ -402,6 +420,17 @@ class AtiloClean(cli.Application):
 class AtiloRemove(cli.Application):
     def main(self, name):
         cmd_remove(name)
+
+
+@AtiloApp.subcommand('list')
+class AtiloList(cli.Application):
+    installed = cli.Flag('--installed')
+
+    def main(self):
+        if self.installed:
+            cmd_list_installed()
+        else:
+            cmd_list()
 
 
 def main():
