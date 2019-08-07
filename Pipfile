@@ -5,9 +5,14 @@ verify_ssl = true
 
 [dev-packages]
 rope = "*"
+# yapf is used for formatting the code
 yapf = "*"
 autopep8 = "*"
+# flake8 is used for linting
 flake8 = "*"
+# isort is used for sort imports
+# Usage: isort *.py
+isort = "*"
 
 [packages]
 plumbum = "*"
