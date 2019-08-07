@@ -264,14 +264,22 @@ def fatal(s: str) -> None:
 def check_req() -> None:
     tip('[ Checking for requirements ... ]')
 
-    reqs = ('tar', 'proot', 'pv', 'curl', 'grep')
+    req_pkgs = {
+        'tar': 'tar',
+        'proot': 'proot',
+        'pv': 'pv',
+        'curl': 'curl',
+        'grep': 'grep',
+        'gzip': 'gzip',
+        'xz': 'xz-utils',
+    }
     installs = []
 
-    for cmd in reqs:
+    for cmd, pkg in req_pkgs.items():
         try:
             local[cmd]
         except Exception:
-            installs.append(cmd)
+            installs.append(pkg)
 
     pkg = local['apt']
     pkg['install', installs]()
@@ -279,7 +287,7 @@ def check_req() -> None:
 
 def format_url(dist: str, arch: str, version: str) -> str:
     if dist not in support_linux:
-        fatal('Disttribution {dist} is not supported'.format(dist))
+        fatal('Disttribution {dist} is not supported'.format(dist=dist))
 
     distinfo = support_linux[dist]
 
