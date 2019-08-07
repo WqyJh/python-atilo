@@ -196,8 +196,8 @@ start_script = '''#!{shell}
 cd $HOME/.atilo/
 unset LD_PRELOAD
 command="proot"
-#command+=" -0"
-command+=" -S {release_name}"
+command+=" -0"
+command+=" -r {release_name}"
 #command+=" -b /system"
 command+=" -b /dev/"
 #command+=" -b /sys/"
@@ -229,9 +229,9 @@ def check_arch() -> str:
     arch = platform.machine()
 
     if arch == 'aarch64':
-        time_arch = 'arm64'
+        time_arch = 'aarch64'
     elif 'arm' in arch:
-        time_arch = 'armhf'
+        time_arch = 'arm'
     elif arch == 'i686':
         time_arch = 'i386'
     elif arch == 'x86_64':
@@ -338,7 +338,8 @@ def install_linux(dist: str, arch: str, version: str = ''):
         chmod['+w', root] & FG
     else:
         tararg = '{}C'.format(distinfo['zip'])
-        (pv[release_name] | proot['tar', tararg, root]) & FG
+        (pv[release_name] | tar[tararg, root]) & FG
+        #(pv[release_name] | proot['tar', tararg, root]) & FG
 
     tip('[ Configuring ... ]')
     resolvconf = os.path.join(root, 'etc/resolv.conf')
