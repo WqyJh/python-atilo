@@ -346,8 +346,12 @@ def install_linux(dist: str, arch: str, version: str = ''):
         chmod['+w', root] & FG
     else:
         tararg = '{}C'.format(distinfo['zip'])
-        (pv[release_name] | tar[tararg, root]) & FG
-        #(pv[release_name] | proot['tar', tararg, root]) & FG
+        try:
+            (pv[release_name] | proot['--link2symlink'
+                                      'tar', tararg, root]) & FG
+        except Exception:
+            tip("extract without proot")
+            (pv[release_name] | tar[tararg, root]) & FG
 
     tip('[ Configuring ... ]')
     resolvconf = os.path.join(root, 'etc/resolv.conf')
@@ -390,7 +394,8 @@ def cmd_remove(name):
     os.chdir(atilo_home)
     if os.path.isdir(name):
         shutil.rmtree(name)
-        shutil.rmtree(start_script_file.format(release_name=name), ignore_errors=True)
+        shutil.rmtree(start_script_file.format(release_name=name),
+                      ignore_errors=True)
         tip('[ Successfully delete {release_name} ]'.format(release_name=name))
     else:
         fatal("[ Unable to locate {release_name} ]".format(release_name=name))
