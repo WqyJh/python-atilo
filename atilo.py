@@ -220,6 +220,7 @@ fi'''
 atilo_home = '{home}/.atilo'.format(home=local.env['HOME'])
 atilo_tmp = '{atilo_home}/tmp'.format(atilo_home=atilo_home)
 prefix = local.env.get('PREFIX', '')
+start_script_file = prefix + '/bin/start{release_name}'
 
 
 def tip(s: str) -> None:
@@ -297,7 +298,7 @@ def format_url(dist: str, arch: str, version: str) -> str:
 def create_start_script(release_name) -> str:
     execname = 'start' + release_name
 
-    filename = prefix + '/bin/' + execname
+    filename = start_script_file.format(release_name=release_name)
     script = start_script.format(release_name=release_name, sh='bash')
     (echo[script] > filename)()
     chmod['+x', filename]()
@@ -358,6 +359,16 @@ def cmd_install(dist, version):
     install_linux(dist, arch, version)
 
 
+def cmd_remove(name):
+    os.chdir(atilo_home)
+    if os.path.isdir(name):
+        shutil.rmtree(name)
+        os.remove(start_script_file.format(release_name=name))
+        tip('[ Successfully delete {release_name} ]'.format(release_name=name))
+    else:
+        fatal("[ Unable to locate {release_name} ]".format(release_name=name))
+
+
 def cmd_clean():
     tip('Cleaning tmp ...')
     shutil.rmtree(atilo_tmp)
@@ -385,6 +396,12 @@ class AtiloInstall(cli.Application):
 class AtiloClean(cli.Application):
     def main(self):
         cmd_clean()
+
+
+@AtiloApp.subcommand('remove')
+class AtiloRemove(cli.Application):
+    def main(self, name):
+        cmd_remove(name)
 
 
 def main():
