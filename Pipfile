@@ -5,8 +5,9 @@ verify_ssl = true
 
 [dev-packages]
 rope = "*"
-pylint = "*"
+yapf = "*"
 autopep8 = "*"
+flake8 = "*"
 
 [packages]
 plumbum = "*"
