@@ -1,13 +1,14 @@
 import os
 import platform
+import shutil
 
-from plumbum import local, colors, cli, FG
-from plumbum.cmd import rm, chmod, echo, uname
-
+from plumbum import FG, cli, colors, local
+from plumbum.cmd import chmod, echo, rm
 
 support_linux = {
     'alpine': {
-        'url': 'http://dl-cdn.alpinelinux.org/alpine/v{version}/releases/{arch}/alpine-minirootfs-{version}.0-aarch64.tar.gz',
+        'url':
+        'http://dl-cdn.alpinelinux.org/alpine/v{version}/releases/{arch}/alpine-minirootfs-{version}.0-aarch64.tar.gz',
         'zip': 'zx',
         'update': 'apk update && apk upgrade',
         'latest': 'latest-stable',
@@ -28,9 +29,11 @@ support_linux = {
         },
     },
     'arch': {
-        'url': 'http://os.archlinuxarm.org/os/ArchLinuxARM-{arch}-{version}.tar.gz',
+        'url':
+        'http://os.archlinuxarm.org/os/ArchLinuxARM-{arch}-{version}.tar.gz',
         'zip': 'pzx',
-        'update': 'pacman-key --init && pacman-key --populate archlinuxarm && pacman -Sy',
+        'update':
+        'pacman-key --init && pacman-key --populate archlinuxarm && pacman -Sy',
         'latest': 'latest',
         'aarch64': {
             'versions': ['latest'],
@@ -41,14 +44,17 @@ support_linux = {
         },
     },
     'centos': {
-        'url': 'https://raw.githubusercontent.com/CentOS/sig-cloud-instance-images/CentOS-{version}{arch}/docker/centos-{version}{arch}-docker.tar.xz',
+        'url':
+        'https://raw.githubusercontent.com/CentOS/sig-cloud-instance-images/CentOS-{version}{arch}/docker/centos-{version}{arch}-docker.tar.xz',
         'zip': 'Jx',
         'update': 'yum makecache',
         'latest': '7',
         'aarch64': {
-            'arch': 'arm64',
+            'arch':
+            'arm64',
             'versions': ['7'],
-            'url': 'https://raw.githubusercontent.com/CentOS/sig-cloud-instance-images/CentOS-{version}-aarch64/docker/centos-{version}arm64-docker.tar.xz',
+            'url':
+            'https://raw.githubusercontent.com/CentOS/sig-cloud-instance-images/CentOS-{version}-aarch64/docker/centos-{version}arm64-docker.tar.xz',
         },
         'arm': {
             'arch': 'armhf',
@@ -63,7 +69,8 @@ support_linux = {
         },
     },
     'debian': {
-        'url': 'https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-{arch}/{version}/slim/rootfs.tar.xz',
+        'url':
+        'https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-{arch}/{version}/slim/rootfs.tar.xz',
         'zip': 'Jx',
         'update': 'apt update && apt upgrade',
         'latest': 'stable',
@@ -83,7 +90,8 @@ support_linux = {
         },
     },
     'fedora': {
-        'url': 'https://dl.fedoraproject.org/pub/fedora/linux/releases/{version}/Container/{arch}/images/Fedora-Container-Base-{version}-1.2.{arch}.tar.xz',
+        'url':
+        'https://dl.fedoraproject.org/pub/fedora/linux/releases/{version}/Container/{arch}/images/Fedora-Container-Base-{version}-1.2.{arch}.tar.xz',
         'zip': 'Jx',
         'update': 'dnf makecache',
         'latest': '30',
@@ -91,9 +99,11 @@ support_linux = {
             'versions': ['30'],
         },
         'arm': {
-            'arch': 'armhfp',
+            'arch':
+            'armhfp',
             'versions': ['28'],
-            'url': 'https://dl.fedoraproject.org/pub/fedora/linux/releases/{version}/Container/{arch}/images/Fedora-Container-Minimal-Base-{version}-1.1.{arch}.tar.xz',
+            'url':
+            'https://dl.fedoraproject.org/pub/fedora/linux/releases/{version}/Container/{arch}/images/Fedora-Container-Minimal-Base-{version}-1.1.{arch}.tar.xz',
         },
         'amd64': {
             'arch': 'x86_64',
@@ -101,7 +111,8 @@ support_linux = {
         },
     },
     'kali': {
-        'url': 'https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Rootfs/Kali/{arch}/kali-rootfs-{arch}.tar.gz',
+        'url':
+        'https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Rootfs/Kali/{arch}/kali-rootfs-{arch}.tar.gz',
         'zip': 'zx',
         'update': 'apt update && apt upgrade',
         'latest': '',
@@ -121,7 +132,8 @@ support_linux = {
         },
     },
     'opensuse': {
-        'url': 'http://download.opensuse.org/ports/{arch}/distribution/leap/{version}/appliances/openSUSE-Leap-{version}-ARM-JeOS.{arch}-rootfs.{arch}.tar.xz',
+        'url':
+        'http://download.opensuse.org/ports/{arch}/distribution/leap/{version}/appliances/openSUSE-Leap-{version}-ARM-JeOS.{arch}-rootfs.{arch}.tar.xz',
         'zip': 'Jx',
         'update': 'zypper up',
         'latest': '15.1',
@@ -130,7 +142,8 @@ support_linux = {
         },
     },
     'parrot': {
-        'url': 'https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Rootfs/Parrot/{arch}/parrot-rootfs-{arch}.tar.gz',
+        'url':
+        'https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Rootfs/Parrot/{arch}/parrot-rootfs-{arch}.tar.gz',
         'zip': 'zx',
         'update': 'apt update && apt upgrade',
         'latest': '',
@@ -150,7 +163,8 @@ support_linux = {
         },
     },
     'ubuntu': {
-        'url': 'https://partner-images.canonical.com/core/{version}/current/ubuntu-{version}-core-cloudimg-{arch}-root.tar.gz',
+        'url':
+        'https://partner-images.canonical.com/core/{version}/current/ubuntu-{version}-core-cloudimg-{arch}-root.tar.gz',
         'zip': 'zx',
         'update': 'apt update && apt upgrade',
         'latest': 'bionic',
@@ -171,13 +185,11 @@ support_linux = {
     },
 }
 
-
 name_servers = '''nameserver 1.1.1.1
 nameserver 1.0.0.1
 nameserver 8.8.8.8
 nameserver 8.8.4.4
 '''
-
 
 start_script = '''#!/data/data/com.termux/files/usr/bin/bash
 cd $HOME/.atilo/
@@ -204,7 +216,6 @@ if [ -z "$1" ];then
 else
     $command -c "$com"
 fi'''
-
 
 atilo_home = '{home}/.atilo'.format(home=local.env['HOME'])
 atilo_tmp = '{atilo_home}/tmp'.format(atilo_home=atilo_home)
@@ -236,7 +247,7 @@ def check_req() -> None:
     for cmd in reqs:
         try:
             local[cmd]
-        except:
+        except Exception:
             installs.append(cmd)
 
     pkg = local['apt']
@@ -261,20 +272,26 @@ def check_arch() -> str:
 
 
 def format_url(dist: str, arch: str, version: str) -> str:
-    if not dist in support_linux:
+    if dist not in support_linux:
         fatal('Disttribution {dist} is not supported'.format(dist))
 
     distinfo = support_linux[dist]
 
-    if not arch in distinfo:
-        fatal('{arch} is not supported for {dist}'.format(dist=dist, arch=arch))
+    if arch not in distinfo:
+        fatal('{arch} is not supported for {dist}'.format(dist=dist,
+                                                          arch=arch))
 
-    if not version in distinfo[arch]['versions']:
-        warn('{version} is no supported for {dist} {arch}, use {latest} instead'.format(
-            dist=dist, arch=arch, version=version, latest=distinfo['latest']))
+    if version not in distinfo[arch]['versions']:
+        warn(
+            '{version} is no supported for {dist} {arch}, use {latest} instead'
+            .format(dist=dist,
+                    arch=arch,
+                    version=version,
+                    latest=distinfo['latest']))
         version = distinfo['latest']
 
-    return distinfo, distinfo['url'].format(arch=arch, version=version), version
+    return distinfo, distinfo['url'].format(arch=arch,
+                                            version=version), version
 
 
 def create_start_script(release_name) -> str:
@@ -289,7 +306,7 @@ def create_start_script(release_name) -> str:
 
 
 def install_linux(dist: str, arch: str, version: str = ''):
-    from plumbum.cmd import tar, proot, pv, curl, grep, bash
+    from plumbum.cmd import tar, proot, pv, curl, bash
 
     distinfo, url, version = format_url(dist, arch, version)
 
@@ -307,8 +324,8 @@ def install_linux(dist: str, arch: str, version: str = ''):
 
     tip('[ Extracting ... ]')
     if 'fedora' in release_name:
-        tar['xf', release_name, '--skip-components=1',
-            '--exclude', 'json', '--exclude', 'VERSION'] & FG
+        tar['xf', release_name, '--skip-components=1', '--exclude', 'json',
+            '--exclude', 'VERSION'] & FG
         (pv['layer.tar'] | proot['tar', 'xpC', root]) & FG
         rm['-f', 'layer.tar'] & FG
         chmod['+w', root] & FG
@@ -341,6 +358,11 @@ def cmd_install(dist, version):
     install_linux(dist, arch, version)
 
 
+def cmd_clean():
+    tip('Cleaning tmp ...')
+    shutil.rmtree(atilo_tmp)
+
+
 class AtiloApp(cli.Application):
     VERSION = '0.1.0'
 
@@ -355,9 +377,14 @@ class AtiloApp(cli.Application):
 
 @AtiloApp.subcommand('install')
 class AtiloInstall(cli.Application):
-
     def main(self, distribution, version=''):
         cmd_install(distribution, version)
+
+
+@AtiloApp.subcommand('clean')
+class AtiloClean(cli.Application):
+    def main(self):
+        cmd_clean()
 
 
 def main():
