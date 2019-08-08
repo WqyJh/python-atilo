@@ -1,9 +1,11 @@
 import os
 import platform
 import shutil
+import sys
 
 from plumbum import FG, TF, cli, colors, local
 from plumbum.cmd import chmod, echo, rm
+from plumbum.commands.modifiers import ExecutionModifier, Future
 
 support_linux = {
     'alpine': {
@@ -198,11 +200,10 @@ unset LD_PRELOAD
 command="proot"
 command+=" -0"
 command+=" -r {release_name}"
-#command+=" -b /system"
-command+=" -b /dev/"
+#command+=" -b /dev/"
 #command+=" -b /sys/"
 command+=" -b /proc/"
-#uncomment the following line to have access to the home directory of termux
+# uncomment the following line to have access to the home directory of termux
 command+=" -w /root"
 command+=" /usr/bin/env -i"
 command+=" HOME=/root"
@@ -245,6 +246,40 @@ def check_arch() -> str:
 ARCH = check_arch()
 
 
+class _BG(ExecutionModifier):
+    """
+    An execution modifier that runs the given command in the background, returning a
+    :class:`Future <plumbum.commands.Future>` object. In order to mimic shell syntax, it applies
+    when you right-and it with a command. If you wish to expect a different return code
+    (other than the normal success indicate by 0), use ``BG(retcode)``. Example::
+
+        future = sleep[5] & BG       # a future expecting an exit code of 0
+        future = sleep[5] & BG(7)    # a future expecting an exit code of 7
+
+    .. note::
+
+       When processes run in the **background** (either via ``popen`` or
+       :class:`& BG <plumbum.commands.BG>`), their stdout/stderr pipes might fill up,
+       causing them to hang. If you know a process produces output, be sure to consume it
+       every once in a while, using a monitoring thread/reactor in the background.
+       For more info, see `#48 <https://github.com/tomerfiliba/plumbum/issues/48>`_
+    """
+    __slots__ = ("retcode", "kargs", "timeout")
+
+    def __init__(self, retcode=0, timeout=None, **kargs):
+        self.retcode = retcode
+        self.kargs = kargs
+        self.timeout = timeout
+
+    def __rand__(self, cmd):
+        p = Future(
+            cmd.popen(**self.kargs), self.retcode, timeout=self.timeout)
+        p.wait()
+        return p
+
+FG = _BG()
+
+
 def tip(s: str) -> None:
     with colors.green:
         print(s)
@@ -271,7 +306,7 @@ def check_req() -> None:
         try:
             local[cmd]
         except Exception:
-            installs.append(pkg)
+            installs.append(cmd)
 
     if installs:
         fatal('please install ' + ' '.join(installs))
@@ -312,6 +347,13 @@ def create_start_script(release_name, sh='bash') -> str:
     return execname
 
 
+def open_file(f):
+    if isinstance(f, str):
+        return open(f)
+
+    return f
+
+
 def install_linux(dist: str, arch: str, version: str = ''):
     from plumbum.cmd import tar, proot, pv, curl, bash
 
@@ -332,18 +374,18 @@ def install_linux(dist: str, arch: str, version: str = ''):
     tip('[ Extracting ... ]')
     if 'fedora' in release_name:
         tar['xf', release_name, '--skip-components=1', '--exclude', 'json',
-            '--exclude', 'VERSION'] & FG
-        (pv['layer.tar'] | proot['tar', 'xpC', root]) & FG
+            '--exclude', 'VERSION'] & FG(retcode=None)
+        (pv['layer.tar'] | proot['tar', 'xpC', root]) & FG(retcode=None)
         rm['-f', 'layer.tar'] & FG
         chmod['+w', root] & FG
     else:
         tararg = '{}C'.format(distinfo['zip'])
         if proot['--link2symlink', 'ls'] & TF:
             (pv[release_name]
-             | proot['--link2symlink', 'tar', tararg, root]) & FG
+             | proot['--link2symlink', 'tar', tararg, root]) & FG(retcode=None)
         else:
             tip("extract without --link2symlink")
-            (pv[release_name] | proot['tar', tararg, root]) & FG
+            (pv[release_name] | proot['tar', tararg, root]) & FG(retcode=None)
 
     tip('[ Configuring ... ]')
     resolvconf = os.path.join(root, 'etc/resolv.conf')
@@ -354,7 +396,7 @@ def install_linux(dist: str, arch: str, version: str = ''):
     script = create_start_script(release_name, distinfo.get('sh', '/bin/bash'))
 
     tip('[ Updating ... ]')
-    bash[script, distinfo['update']] & FG
+    bash[script, distinfo['update']] & FG(retcode=None)
 
     tip('[ All done ... ]')
     tip('{} To start'.format(script))
