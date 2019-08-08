@@ -2,7 +2,7 @@ import os
 import platform
 import shutil
 
-from plumbum import FG, cli, colors, local
+from plumbum import FG, TF, cli, colors, local
 from plumbum.cmd import chmod, echo, rm
 
 support_linux = {
@@ -264,25 +264,17 @@ def fatal(s: str) -> None:
 def check_req() -> None:
     tip('[ Checking for requirements ... ]')
 
-    req_pkgs = {
-        'tar': 'tar',
-        'proot': 'proot',
-        'pv': 'pv',
-        'curl': 'curl',
-        'grep': 'grep',
-        'gzip': 'gzip',
-        'xz': 'xz-utils',
-    }
+    reqs = ('tar', 'proot', 'pv', 'curl', 'grep', 'gzip', 'xz')
     installs = []
 
-    for cmd, pkg in req_pkgs.items():
+    for cmd in reqs:
         try:
             local[cmd]
         except Exception:
             installs.append(pkg)
 
-    pkg = local['apt']
-    pkg['install', installs]()
+    if installs:
+        fatal('please install ' + ' '.join(installs))
 
 
 def format_url(dist: str, arch: str, version: str) -> str:
@@ -346,12 +338,12 @@ def install_linux(dist: str, arch: str, version: str = ''):
         chmod['+w', root] & FG
     else:
         tararg = '{}C'.format(distinfo['zip'])
-        try:
+        if proot['--link2symlink', 'ls'] & TF:
             (pv[release_name]
              | proot['--link2symlink', 'tar', tararg, root]) & FG
-        except Exception:
-            tip("extract without proot")
-            (pv[release_name] | tar[tararg, root]) & FG
+        else:
+            tip("extract without --link2symlink")
+            (pv[release_name] | proot['tar', tararg, root]) & FG
 
     tip('[ Configuring ... ]')
     resolvconf = os.path.join(root, 'etc/resolv.conf')
