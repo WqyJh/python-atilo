@@ -450,25 +450,33 @@ class AtiloApp(cli.Application):
 
 @AtiloApp.subcommand('install')
 class AtiloInstall(cli.Application):
+    '''install a linux release'''
+
     def main(self, distribution, version=''):
         cmd_install(distribution, version)
 
 
 @AtiloApp.subcommand('clean')
 class AtiloClean(cli.Application):
+    '''clean temp files'''
+
     def main(self):
         cmd_clean()
 
 
 @AtiloApp.subcommand('remove')
 class AtiloRemove(cli.Application):
+    '''remove an installed release'''
+
     def main(self, name):
         cmd_remove(name)
 
 
 @AtiloApp.subcommand('list')
 class AtiloList(cli.Application):
-    installed = cli.Flag('--installed')
+    '''show available releases'''
+
+    installed = cli.Flag('--installed', help='show only installed releases')
 
     def main(self):
         if self.installed:
