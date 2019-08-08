@@ -13,6 +13,8 @@ flake8 = "*"
 # isort is used for sort imports
 # Usage: isort *.py
 isort = "*"
+pipenv = "*"
+twine = "*"
 
 [packages]
 plumbum = "*"

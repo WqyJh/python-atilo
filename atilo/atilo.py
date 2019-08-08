@@ -7,6 +7,8 @@ from plumbum import FG, TF, cli, colors, local
 from plumbum.cmd import chmod, echo, rm
 from plumbum.commands.modifiers import ExecutionModifier, Future
 
+from atilo import __version__
+
 support_linux = {
     'alpine': {
         'url':
@@ -441,7 +443,7 @@ def cmd_clean():
 
 
 class AtiloApp(cli.Application):
-    VERSION = '0.1.0'
+    VERSION = __version__
 
     def main(self):
         if not self.nested_command:
@@ -450,25 +452,33 @@ class AtiloApp(cli.Application):
 
 @AtiloApp.subcommand('install')
 class AtiloInstall(cli.Application):
+    '''install a linux release'''
+
     def main(self, distribution, version=''):
         cmd_install(distribution, version)
 
 
 @AtiloApp.subcommand('clean')
 class AtiloClean(cli.Application):
+    '''clean temp files'''
+
     def main(self):
         cmd_clean()
 
 
 @AtiloApp.subcommand('remove')
 class AtiloRemove(cli.Application):
+    '''remove an installed release'''
+
     def main(self, name):
         cmd_remove(name)
 
 
 @AtiloApp.subcommand('list')
 class AtiloList(cli.Application):
-    installed = cli.Flag('--installed')
+    '''show available releases'''
+
+    installed = cli.Flag('--installed', help='show only installed releases')
 
     def main(self):
         if self.installed:

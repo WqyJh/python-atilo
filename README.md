@@ -1,16 +1,21 @@
 # python-atilo
 
+Install linux on termux.
+
 [atilo](https://github.com/YadominJinta/atilo) written in python.
+
 
 ## Installation
 
-TODO
+```bash
+pip install atilo
+```
 
 ## Usage
 
 ### Show available releases
 ```bash
-$ python atilo.py list
+$ atilo list
 name                version                       
 alpine      2.7 3.9                       
 centos      7                             
@@ -24,7 +29,7 @@ ubuntu      trusty xenial bionic
 ### Show installed releases
 
 ```bash
-$ python atilo.py list --installed
+$ atilo list --installed
 alpine3.9
 debianbuster
 ```
@@ -33,10 +38,10 @@ debianbuster
 
 ```bash
 # Install the latest debian release
-python atilo.py install debian
+atilo install debian
 
 # Install specified debian release
-python atilo.py install debian jessie
+atilo install debian jessie
 ```
 
 ### Run a release
@@ -49,11 +54,63 @@ startdebianjessie
 ### Remove a release
 
 ```bash
-python atilo.py debianbuster
+atilo debianbuster
 ```
 
 ### Clean temp files
 
 ```bash
-python atilo.py clean
+atilo clean
 ```
+
+
+## Contribute
+
+### Prerequisite
+
+- Python >= 3
+- pipenv
+
+
+### Requirements
+
+```bash
+pipenv install --dev
+```
+
+### Run
+
+```bash
+python run.py
+```
+
+### Generate Changelog (For Maintainers Only)
+
+Install python tool `auto-changelog` to generate changelog.
+
+```bash
+sudo pip3 install git+https://github.com/Michael-F-Bryan/auto-changelog
+```
+
+Generate and write changelog to `CHANGELOG.md`.
+
+```bash
+auto-changelog
+```
+
+### Bump Version (For Maintainers Only)
+
+```bash
+sudo pip3 install commitizen
+```
+
+Using `commitizen` tool to generate semantic version number.
+
+```bash
+$ cz bump
+[NO_VERSION_SPECIFIED]
+Check if current version is specified in config file, like:
+version = 0.4.3
+```
+
+Edit the `atilo/__init__.py`, set the `__version__` value to `'0.4.3'` (semantic version generated above).
