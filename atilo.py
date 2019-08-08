@@ -200,9 +200,8 @@ unset LD_PRELOAD
 command="proot"
 command+=" -0"
 command+=" -r {release_name}"
-# command+=" -b /system"
-command+=" -b /dev/"
-# command+=" -b /sys/"
+#command+=" -b /dev/"
+#command+=" -b /sys/"
 command+=" -b /proc/"
 # uncomment the following line to have access to the home directory of termux
 command+=" -w /root"
@@ -363,7 +362,7 @@ def install_linux(dist: str, arch: str, version: str = ''):
     script = create_start_script(release_name, distinfo.get('sh', '/bin/bash'))
 
     tip('[ Updating ... ]')
-    bash[script, distinfo['update']] & FG
+    bash[script, distinfo['update']] & FG(retcode=None)
 
     tip('[ All done ... ]')
     tip('{} To start'.format(script))
