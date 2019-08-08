@@ -1,16 +1,21 @@
 # python-atilo
 
+Install linux on termux.
+
 [atilo](https://github.com/YadominJinta/atilo) written in python.
+
 
 ## Installation
 
-TODO
+```bash
+pip install atilo
+```
 
 ## Usage
 
 ### Show available releases
 ```bash
-$ python atilo.py list
+$ atilo list
 name                version                       
 alpine      2.7 3.9                       
 centos      7                             
@@ -24,7 +29,7 @@ ubuntu      trusty xenial bionic
 ### Show installed releases
 
 ```bash
-$ python atilo.py list --installed
+$ atilo list --installed
 alpine3.9
 debianbuster
 ```
@@ -33,10 +38,10 @@ debianbuster
 
 ```bash
 # Install the latest debian release
-python atilo.py install debian
+atilo install debian
 
 # Install specified debian release
-python atilo.py install debian jessie
+atilo install debian jessie
 ```
 
 ### Run a release
@@ -49,11 +54,32 @@ startdebianjessie
 ### Remove a release
 
 ```bash
-python atilo.py debianbuster
+atilo debianbuster
 ```
 
 ### Clean temp files
 
 ```bash
-python atilo.py clean
+atilo clean
+```
+
+
+## Contribute
+
+### Prerequisite
+
+- Python >= 3
+- pipenv
+
+
+### Requirements
+
+```bash
+pipenv install --dev
+```
+
+### Run
+
+```bash
+python run.py
 ```
