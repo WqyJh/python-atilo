@@ -1,2 +1,5 @@
 .vscode/
 *.py[c|d]
+*.egg-info/
+build/
+dist/
