@@ -1,9 +1,11 @@
 import os
 import platform
 import shutil
+import sys
 
-from plumbum import FG, TF, cli, colors, local
+from plumbum import TF, cli, colors, local
 from plumbum.cmd import chmod, echo, rm
+from plumbum.commands.modifiers import ExecutionModifier
 
 support_linux = {
     'alpine': {
@@ -198,11 +200,11 @@ unset LD_PRELOAD
 command="proot"
 command+=" -0"
 command+=" -r {release_name}"
-#command+=" -b /system"
+# command+=" -b /system"
 command+=" -b /dev/"
-#command+=" -b /sys/"
+# command+=" -b /sys/"
 command+=" -b /proc/"
-#uncomment the following line to have access to the home directory of termux
+# uncomment the following line to have access to the home directory of termux
 command+=" -w /root"
 command+=" /usr/bin/env -i"
 command+=" HOME=/root"
@@ -271,7 +273,7 @@ def check_req() -> None:
         try:
             local[cmd]
         except Exception:
-            installs.append(pkg)
+            installs.append(cmd)
 
     if installs:
         fatal('please install ' + ' '.join(installs))
@@ -312,6 +314,51 @@ def create_start_script(release_name, sh='bash') -> str:
     return execname
 
 
+def open_file(f):
+    if isinstance(f, str):
+        return open(f)
+
+    return f
+
+
+class _FG(ExecutionModifier):
+    """
+    An execution modifier that runs the given command in the foreground, passing it the
+    current process' stdin, stdout and stderr. Useful for interactive programs that require
+    a TTY. There is no return value.
+
+    In order to mimic shell syntax, it applies when you right-and it with a command.
+    If you wish to expect a different return code (other than the normal success indicate by 0),
+    use ``FG(retcode)``. Example::
+
+        vim & FG       # run vim in the foreground, expecting an exit code of 0
+        vim & FG(7)    # run vim in the foreground, expecting an exit code of 7
+    """
+    __slots__ = ("retcode", "timeout", 'stdin', 'stdout', 'stderr')
+
+    def __init__(self,
+                 retcode=0,
+                 timeout=None,
+                 stdin=None,
+                 stdout=None,
+                 stderr=None):
+        self.retcode = retcode
+        self.timeout = timeout
+        self.stdin = open_file(stdin)
+        self.stdout = open_file(stdout)
+        self.stderr = open_file(stderr)
+
+    def __rand__(self, cmd):
+        cmd(retcode=self.retcode,
+            timeout=self.timeout,
+            stdin=self.stdin,
+            stdout=self.stdout,
+            stderr=self.stderr)
+
+
+FG = _FG()
+
+
 def install_linux(dist: str, arch: str, version: str = ''):
     from plumbum.cmd import tar, proot, pv, curl, bash
 
@@ -332,18 +379,20 @@ def install_linux(dist: str, arch: str, version: str = ''):
     tip('[ Extracting ... ]')
     if 'fedora' in release_name:
         tar['xf', release_name, '--skip-components=1', '--exclude', 'json',
-            '--exclude', 'VERSION'] & FG
-        (pv['layer.tar'] | proot['tar', 'xpC', root]) & FG
+            '--exclude', 'VERSION'] & FG(stdout=sys.stdout)
+        (pv['layer.tar'] | proot['tar', 'xpC', root]) & FG(stdout=sys.stdout)
         rm['-f', 'layer.tar'] & FG
         chmod['+w', root] & FG
     else:
         tararg = '{}C'.format(distinfo['zip'])
         if proot['--link2symlink', 'ls'] & TF:
             (pv[release_name]
-             | proot['--link2symlink', 'tar', tararg, root]) & FG
+             | proot['--link2symlink', 'tar', tararg, root]) & FG(
+                 stderr='/dev/null')
         else:
             tip("extract without --link2symlink")
-            (pv[release_name] | proot['tar', tararg, root]) & FG
+            (pv[release_name]
+             | proot['tar', tararg, root]) & FG(stderr='/dev/null')
 
     tip('[ Configuring ... ]')
     resolvconf = os.path.join(root, 'etc/resolv.conf')
