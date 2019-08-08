@@ -5,7 +5,7 @@ import sys
 
 from plumbum import FG, TF, cli, colors, local
 from plumbum.cmd import chmod, echo, rm
-from plumbum.commands.modifiers import ExecutionModifier
+from plumbum.commands.modifiers import ExecutionModifier, Future
 
 support_linux = {
     'alpine': {
@@ -244,6 +244,40 @@ def check_arch() -> str:
 
 
 ARCH = check_arch()
+
+
+class _BG(ExecutionModifier):
+    """
+    An execution modifier that runs the given command in the background, returning a
+    :class:`Future <plumbum.commands.Future>` object. In order to mimic shell syntax, it applies
+    when you right-and it with a command. If you wish to expect a different return code
+    (other than the normal success indicate by 0), use ``BG(retcode)``. Example::
+
+        future = sleep[5] & BG       # a future expecting an exit code of 0
+        future = sleep[5] & BG(7)    # a future expecting an exit code of 7
+
+    .. note::
+
+       When processes run in the **background** (either via ``popen`` or
+       :class:`& BG <plumbum.commands.BG>`), their stdout/stderr pipes might fill up,
+       causing them to hang. If you know a process produces output, be sure to consume it
+       every once in a while, using a monitoring thread/reactor in the background.
+       For more info, see `#48 <https://github.com/tomerfiliba/plumbum/issues/48>`_
+    """
+    __slots__ = ("retcode", "kargs", "timeout")
+
+    def __init__(self, retcode=0, timeout=None, **kargs):
+        self.retcode = retcode
+        self.kargs = kargs
+        self.timeout = timeout
+
+    def __rand__(self, cmd):
+        p = Future(
+            cmd.popen(**self.kargs), self.retcode, timeout=self.timeout)
+        p.wait()
+        return p
+
+FG = _BG()
 
 
 def tip(s: str) -> None:
