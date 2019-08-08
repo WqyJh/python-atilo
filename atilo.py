@@ -347,8 +347,8 @@ def install_linux(dist: str, arch: str, version: str = ''):
     else:
         tararg = '{}C'.format(distinfo['zip'])
         try:
-            (pv[release_name] | proot['--link2symlink'
-                                      'tar', tararg, root]) & FG
+            (pv[release_name]
+             | proot['--link2symlink', 'tar', tararg, root]) & FG
         except Exception:
             tip("extract without proot")
             (pv[release_name] | tar[tararg, root]) & FG
