@@ -7,6 +7,8 @@ from plumbum import FG, TF, cli, colors, local
 from plumbum.cmd import chmod, echo, rm
 from plumbum.commands.modifiers import ExecutionModifier, Future
 
+from atilo import __version__
+
 support_linux = {
     'alpine': {
         'url':
@@ -441,7 +443,7 @@ def cmd_clean():
 
 
 class AtiloApp(cli.Application):
-    VERSION = '0.1.0'
+    VERSION = __version__
 
     def main(self):
         if not self.nested_command:
