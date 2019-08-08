@@ -443,13 +443,9 @@ def cmd_clean():
 class AtiloApp(cli.Application):
     VERSION = '0.1.0'
 
-    def main(self, *args):
-        if args:
-            print('Unknown command {0!r}'.format(args[0]))
-            return 1
+    def main(self):
         if not self.nested_command:
-            print('No command given')
-            return 1
+            self.help()
 
 
 @AtiloApp.subcommand('install')
