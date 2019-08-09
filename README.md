@@ -84,12 +84,29 @@ pipenv install --dev
 python run.py
 ```
 
-### Generate Changelog (For Maintainers Only)
-
-Install python tool `auto-changelog` to generate changelog.
+### Bump Version (For Maintainers Only)
 
 ```bash
-sudo pip3 install git+https://github.com/Michael-F-Bryan/auto-changelog
+sudo pip3 install bumping
+```
+
+Using `bumping` to generate semantic version number.
+
+```bash
+$ bumping
+0.2.1
+```
+
+Edit the `atilo/__init__.py`, set the `__version__` value to `'0.2.1'` (semantic version generated above).
+
+
+### Generate Changelog (For Maintainers Only)
+
+Install command line tool `auto-changelog` to generate changelog.
+
+```bash
+sudo pip3 install git+https://github.com/WqyJh/auto-changelog
+#npm install -g auto-changelog
 ```
 
 Generate and write changelog to `CHANGELOG.md`.
@@ -98,19 +115,13 @@ Generate and write changelog to `CHANGELOG.md`.
 auto-changelog
 ```
 
-### Bump Version (For Maintainers Only)
+### Release Workflow (For Maintainers Only)
 
-```bash
-sudo pip3 install commitizen
-```
-
-Using `commitizen` tool to generate semantic version number.
-
-```bash
-$ cz bump
-[NO_VERSION_SPECIFIED]
-Check if current version is specified in config file, like:
-version = 0.4.3
-```
-
-Edit the `atilo/__init__.py`, set the `__version__` value to `'0.4.3'` (semantic version generated above).
+1. checkout release branch from dev branch
+2. bump version and commit
+3. tag version to release branch
+4. generate changelog and commit
+5. untag version from release branch
+6. open PR to master branch
+7. merge PR
+8. tag version to master branch

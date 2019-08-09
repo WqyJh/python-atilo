@@ -1,7 +1,13 @@
 # Changelog
 
 
-## Unreleased
+## 0.4.9
+
+#### Fixes
+
+* fix travis ci deploy
+
+## 0.4.3
 #### New Features
 
 * add command list
