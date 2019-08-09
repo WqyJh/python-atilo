@@ -1,9 +1,5 @@
 # python-atilo
 
-[![Build Status](https://travis-ci.org/WqyJh/python-atilo.svg?branch=master)](https://travis-ci.org/WqyJh/python-atilo)
-[![license](https://img.shields.io/badge/LICENCE-GPLv3-brightgreen.svg)](https://raw.githubusercontent.com/WqyJh/python-atilo/master/LICENSE)
-
-
 Install linux on termux.
 
 [atilo](https://github.com/YadominJinta/atilo) written in python.
